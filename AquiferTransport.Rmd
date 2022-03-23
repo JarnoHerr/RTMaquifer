@@ -47,36 +47,25 @@ state.ini <- c(DOM.ini, NO3.ini, NH3.ini, O2.ini, N2.ini)
 SVnames   <- c("DOM.ini", "NO3.ini", "NH3.ini", "O2.ini", "N2.ini")
 ```
 
-
-
-# Sediment diffusion coefficient for HCO3^-, defined at box interfaces!! (N+1 values)
-diff.DIC  <- diffcoeff(S=35, t=20)$HCO3 * 3600*24  # converted from m2/s to m2/d
-porInt    <- 0.4                                   # porosity at the box interfaces, which is constant throughout the aquifer            
-diffDIC   <- diff.DIC/(1-log(porInt^2))            # corrected for tortuosity
-```
-
-Visualise these settings.
-
-```{r, fig.width=8, fig.height=2.7}
-
-plot(diffDIC, y = Grid$x.int, type="l", ylim = c(Length,0), ylab = "depth (m)", 
-     main = "sediment diff. coeff (DIC)", xlab = "m2/d")
-```
-
-## Additional model parameters
-
-Define model parameters that do *not* vary in space.
-
+##Model Parameters
+The model parameters for the model
 ```{r}
 parms <- c(
- Dbio     = 5e-4/365,   # [m2/d]        bioturbation mixing coefficient
- v_adv    = 5e-6,       # [m/d]         sediment accretion (=advection) velocity 
- kMin     = 0.005,      # [/d]          POC mineralisation rate constant
- depoPOC  = 1e-3,       # [molPOC/m2/d] POC deposition rate (flux at SWI)
- bwDIC    = 2,          # [molDIC/m3]   DIC concentration at SWI
- POC2DIC  = 1           # [mol/mol]     Stoichiometry of reaction POC -> DIC
+ v        = 10*(24/100),   # [m/d]      the velocity of groundwater
+ a        = 1.5,           # [m]        the dispersivity of the aquifer 
+ por      = 0.4,           # [-]        average porosity of the aquifer
+ NC       = 16/106,        # [-]        Redfield ratio C -> N
+ rA       = 0.002*24,      # [/d]       the aerobic respiration rate constant
+ kO2      = 20,            # [umol/L]   affinity constant for O2 substrate
+ rD       = 0.002*24,      # [/d]       the denitrification rate constant
+ kNO3     = 35,            # [umol/L]   rate limitation for No3
+ rNitri   = 0.36*(24/1000) # [/(umol/L)/d] nitrification rate constant
 )
 ```
+
+
+
+
 
 ## Definition and initialisation of state variables
 
