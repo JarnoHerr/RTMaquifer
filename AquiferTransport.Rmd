@@ -1,7 +1,11 @@
 ---
 title: "spread of organic contamination from a river to a aquifer"
 subtitle: "reaction transport model of different compartements in a aquifer"
+<<<<<<< HEAD
 author: "Stijn Eggenkamp, Niek Geelen, Jarno Herrmann and Jesper van Huizen"
+=======
+author: "Stijn Eggenkamp 1, Niek Geelen, Jarno Herrmann and Jesper van Huizen 34"
+>>>>>>> 44c0ed5ebf6b115089fc32b978555225c51421be
 date: "23-3-2022"
 output:
   pdf_document:
