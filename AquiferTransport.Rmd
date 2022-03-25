@@ -16,8 +16,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # R implementation
 
-Wie did leest trekt een bak
-
 Load the required packages.
 
 ```{r, message = FALSE}
