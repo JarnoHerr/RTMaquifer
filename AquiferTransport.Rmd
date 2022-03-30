@@ -52,7 +52,7 @@ NH3.ini   <- rep(0, length = N)
 O2.ini    <- rep(0, length = N)
 N2.ini    <- rep(0, length = N)
 state.ini <- c(DOM.ini, NO3.ini, NH3.ini, O2.ini, N2.ini)
-SVnames   <- c("DOM.ini", "NO3.ini", "NH3.ini", "O2.ini", "N2.ini")
+SVnames   <- c("DOM", "NO3", "NH3", "O2", "N2")
 nspec     <- length(SVnames)
 ```
 
@@ -64,8 +64,6 @@ parms <- c(
  a        = 1.5,           # [m]           the dispersivity of the aquifer 
  por      = 0.4,           # [-]           average porosity of the aquifer
  NC       = 16/106,        # [-]           Redfield ratio C -> N
- temp     = 10,            # [degrees]     Temperature 
- S        = 0,             # [-]           Salinity
  rA       = 0.002*24,      # [/d]          the aerobic respiration rate constant
  kO2      = 20/1000,       # [mol/m3]      affinity constant for O2 substrate
  rD       = 0.002*24,      # [/d]          the denitrification rate constant
@@ -78,6 +76,9 @@ parms <- c(
  NH3river = 0/1000,        # [mol/m3]      the concentration of NH3 in the river
  N2up     = 0/1000         # [mol/m3]      the concentration of N2 in the air
 )
+
+# calculate the oxygen solubility
+O2sat <- gas_solubility(S = 0, t = 10, species = "O2")
 ```
 
 
@@ -100,12 +101,8 @@ Aquifer <- function (t, state, pars)   # state is a LONG vector
     # calculate the diffusion coefficient
     disp <- a*v
     
-    # calculate the oxygen solubility
-    O2sat <- gas_solubility(S = S, t = temp, species = "O2")
-    
     # === transport rates ===
     # note: zero gradient by default at lower boundaries
-    
     # dissolved substances, VF = porosity    
     tran.DOM <- tran.1D(C = DOM, C.up = DOMriver,    # upper boundary: concentration 
                         dx = Grid, VF = por,         # grid and porosity
@@ -247,19 +244,27 @@ Construct the total C budget in the modeled spatial domain to verify that the ma
 
 
 
-
-
-
-
-
 ```
 ## The data 
 ```{r}
-(data.ext <- read.table(file = "p4-data.txt", header = TRUE, sep = ","))
-(depth_data <- as.vector(data.ext$distance_m))
-(ON_data <- as.vector(data.ext$ON_mM))
-(O2_data <- as.vector(data.ext$O2_mM))
-(NH4_data <- as.vector(data.ext$NH4_mM))
+data.ext <- read.table(file = "p4-data.dat", header = TRUE, sep = ",")
 
+klooiparms <- parms
+klooiparms["rA"]        <- 0.06
+klooiparms["rD"]        <- 0.0001
+klooiparms["DOMriver"]  <- 0.06
+klooiparms["rAer"]      <- 0.00001
+klooiparms["rNitri"]    <- 0.004
+klooiparms["rNitri"]    <- 0.004
+
+std2 <- steady.1D (y=state.ini, func=Aquifer, parms=klooiparms, 
+                   nspec=nspec, dimens=N, names=SVnames,
+                   positive = TRUE) 
+
+```
+```{r}
+plot(std, std2, grid=Grid$x.mid, lty=1, lwd=2, mfrow=c(2,3), xlab = "length (m)", ylab = "Concentration (mol/m3)", which = c("DOM","NH3","O2"), obs = data.ext)
+plot.new()
+legend("right", legend = c("Standard", "Calibration"), lty=1,lwd=2,col=1:3)
 ```
 
