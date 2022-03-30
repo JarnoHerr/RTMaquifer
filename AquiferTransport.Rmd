@@ -14,6 +14,14 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+{r child = ’intro.Rmd’}
+
+
+
+een mannetje en een vrouwtje gingen samen een filmpje kijken. Helaas is de film nooit gekeken. 
+
+
+
 # R implementation
 
 Load the required packages.
@@ -190,18 +198,18 @@ std <- steady.1D (y=state.ini, func=Aquifer, parms=parms,
 
 ```
 
-### Plotting
+## Plotting
 
 Visualise the steady state solutions, including the depth profile of the process rate.
 
 ```{r}
-plot(std, grid=Grid$x.mid, lty=1, lwd=2, mfrow=c(2,3))
+plot(std, grid=Grid$x.mid, lty=1, lwd=2, mfrow=c(2,3), xlab = "length (m)", ylab = "concentration (mol/m3)")
 plot(std, grid=Grid$x.mid, which=c("Mineralisation", "Denitrification", "Nitrification", "Aeration"), lty=1, lwd=2, mfrow=c(2,3))
 
 
 ```
 
-### Budget
+## Budget
 
 Check the fluxes at the domain boundaries (only done for the steady-state solution *std1*).
 
@@ -245,60 +253,13 @@ Construct the total C budget in the modeled spatial domain to verify that the ma
 
 
 ```
-
-## Dynamic solution
-
-Find the dynamic solution using the function *ode.1D* from the package *deSolve*. The steady-state solution *std1* is used as the initial condition, the POC deposition flux is increased 10-fold. 
-
+## The data 
 ```{r}
-times          <- seq(from = 0, to = 2*365, by = 10)
-p2             <- parms
-p2["depoPOC"]  <- parms["depoPOC"]*10         # molPOC/m2/day
-out            <- ode.1D(y=std1$y, func=Diamodel, parms=p2, times = times,
-                         nspec=nspec, dimens=N, names=names )
+(data.ext <- read.table(file = "p4-data.txt", header = TRUE, sep = ","))
+(depth_data <- as.vector(data.ext$distance_m))
+(ON_data <- as.vector(data.ext$ON_mM))
+(O2_data <- as.vector(data.ext$O2_mM))
+(NH4_data <- as.vector(data.ext$NH4_mM))
+
 ```
 
-### Plotting
-
-Visualise the dynamic solution as an image.
-
-```{r, fig.width=8, fig.height=4}
-par(mar = c(4,4,4,4))
-image(out, legend = TRUE, grid = Grid$x.mid, ylim = c(Length,0), 
-      las = 1, ylab = "depth (m)", xlab="time (d)")
-```
-
-Display results as lines showing the depth distribution for all time points.
-
-```{r, fig.width=8, fig.height=4}
-matplot.1D(out, type = "l", grid = Grid$x.mid, 
-      col = grey(seq(0.2,0.8,len=length(times))), # This will use a sequence of greys
-                                                  # grey(1) = white, grey(0) = black
-      las = 1, xyswap = TRUE, lty = 1, ylab="depth (m)",
-      xlab = c("molPOC/m3 SOLID", "molDIC/m3 LIQUID"))
-```
-
-Visualise the fluxes at the SWI and in the deep sediment as a function of time.
-
-```{r, fig.width=10, fig.height=3}
-plot(out, which = c("DIC.SWI.Flux", "DIC.Deep.Flux", 
-                    "POC.SWI.Flux", "POC.Deep.Flux"), 
-     mfrow=c(1,4), xlab="time (d)", ylab="molC/m2/d")
-```
-
-# References
-
-R Core Team (2020). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
-  
-Soetaert Karline (2009).  rootSolve: Nonlinear root finding, equilibrium and steady-state analysis of ordinary differential equations.  R-package version 1.6
-  
-Soetaert Karline, Thomas Petzoldt, R. Woodrow Setzer (2010). Solving Differential
-  Equations in R: Package deSolve. Journal of Statistical Software, 33(9), 1--25. URL
-  http://www.jstatsoft.org/v33/i09/ DOI 10.18637/jss.v033.i09
-  
-Soetaert, Karline and Meysman, Filip (2012). Reactive transport in aquatic ecosystems: Rapid model
-  prototyping in the open source software R Environmental Modelling & Software, 32, 49-60.
-
-Soetaert Karline and Thomas Petzoldt (2020). marelac: Tools for Aquatic Sciences. R package
-  version 2.1.10. https://CRAN.R-project.org/package=marelac
-  
