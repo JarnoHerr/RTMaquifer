@@ -19,11 +19,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # R implementation
 
-
-
-
-# R implementation
-
 Load the required packages.
 
 ```{r, message = FALSE}
@@ -83,6 +78,7 @@ parms <- c(
 O2satmm <- gas_solubility(S = 0, t = 10, species = "O2")      #mmol/m3/bar
 O2sat <- O2satmm/1000*0.21                                         #mol/m3/bar
 # partial pressure. bar is gehele atmospheric pressure. *21% is only the o2 in de atmosfeer
+
 
 ```
 
@@ -257,12 +253,12 @@ Construct the total C budget in the modeled spatial domain to verify that the ma
 data.ext <- read.table(file = "p4-data.dat", header = TRUE, sep = ",")
 data.ext$DOM <- data.ext$DOM / parms[["NC"]]           #from N to C
 
+
 klooiparms <- parms
+
 klooiparms["rNitri"]     <- 0.36*24/2.3
 klooiparms["rAer"]       <- 0.0003*24/3.3   
 klooiparms["DOMriver"]   <- 0.5*0.70          
-
-
 
 std2 <- steady.1D (y=state.ini, func=Aquifer, parms=klooiparms, 
                    nspec=nspec, dimens=N, names=SVnames,
@@ -275,5 +271,84 @@ plot.new()
 legend("right", legend = c("Standard", "Calibration"), lty=1,lwd=2,col=1:3)
 ```
 ```{r}
+
+#sensitivity analysis
+Sens <- function(DOMup){
+ parsDOM <- parms
+ parsDOM["DOMriver"] <- DOMup   # concentration of DOM in the river 
+ AquiferDOM <- steady.1D(y = state.ini, parms = parsDOM, func = Aquifer, positive = TRUE,
+                  nspec = length(SVnames), dimens = N, names = SVnames)
+}
+
+DOM_vect <- seq(from = 0, to = 1, by = 0.05)
+O2_vect   <- NULL
+O2_vect1  <- NULL
+O2_vect2  <- NULL
+NO3_vect  <- NULL
+NO3_vect1 <- NULL
+NO3_vect2 <- NULL
+NH3_vect  <- NULL
+NH3_vect1 <- NULL
+NH3_vect2 <- NULL
+
+# use for-loop to find the minimal, mean, and maximal O2 concentration for each value in DOM_vect
+for (DOMup in DOM_vect) 
+   O2_vect <- c(O2_vect, min(Sens(DOMup)$y[,"O2"]))
+
+for (DOMup in DOM_vect) 
+   O2_vect1 <- c(O2_vect1, max(Sens(DOMup)$y[,"O2"]))
+
+for (DOMup in DOM_vect) 
+   O2_vect2 <- c(O2_vect2, mean(Sens(DOMup)$y[,"O2"]))
+
+
+
+plot(DOM_vect, O2_vect, type="b", xlab = "upstream DOM concentration, [molC/m3]", 
+  ylab = "O2, [molO2/m3]", main = "O2 concentration in the aquifer", ylim = c(0,2), col = "blue")
+
+lines(x = DOM_vect, y = O2_vect1, type = "b", col = "yellow")
+
+lines(x = DOM_vect, y = O2_vect2, type = "b", col = "black")
+
+legend("topright", legend = c("minimal", "maximal", "mean"), lty = 1, col = c("blue", "yellow", "black"))
+
+# use for-loop to find the minimal, mean, and maximal NO3 concentration for each value in DOM_vect
+for (DOMup in DOM_vect)
+   NO3_vect <- c(NO3_vect, min(Sens(DOMup)$y[,"NO3"]))
+
+for (DOMup in DOM_vect) 
+   NO3_vect1 <- c(NO3_vect1, max(Sens(DOMup)$y[,"NO3"]))
+
+for (DOMup in DOM_vect) 
+   NO3_vect2 <- c(NO3_vect2, mean(Sens(DOMup)$y[,"NO3"]))
+
+plot(DOM_vect, NO3_vect, type="b", xlab = "upstream DOM concentration, [molC/m3]", 
+  ylab = "NO3, [molNO3/m3]", main = "NO3 concentration in the estuary", ylim = c(0,0.2), col = "blue")
+
+lines(x = DOM_vect, y = NO3_vect1, type = "b", col ="yellow")
+
+lines(x = DOM_vect, y = NO3_vect2, type = "b", col = "black")
+
+legend("topright", legend = c("minimal", "maximal", "mean"), lty = 1, col = c("blue", "yellow", "black"))
+
+# use for-loop to find the minimal, mean, and maximal NH3 concentration for each value in DOM_vect
+for (DOMup in DOM_vect)
+   NH3_vect <- c(NH3_vect, min(Sens(DOMup)$y[,"NH3"]))
+
+for (DOMup in DOM_vect) 
+   NH3_vect1 <- c(NH3_vect1, max(Sens(DOMup)$y[,"NH3"]))
+
+for (DOMup in DOM_vect) 
+   NH3_vect2 <- c(NH3_vect2, mean(Sens(DOMup)$y[,"NH3"]))
+
+plot(DOM_vect, NH3_vect, type="b", xlab = "upstream DOM concentration, [molC/m3]", 
+  ylab = "NH3, [molNH3/m3]", main = "NH3 concentration in the estuary", ylim = c(0, 0.03), col = "blue")
+
+lines(x = DOM_vect, y = NH3_vect1, type = "b", col ="yellow")
+
+lines(x = DOM_vect, y = NH3_vect2, type = "b", col = "black")
+
+legend("topright", legend = c("minimal", "maximal", "mean"), lty = 1, col = c("blue", "yellow", "black"))
+
 ```
 
