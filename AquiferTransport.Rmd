@@ -78,7 +78,10 @@ parms <- c(
 )
 
 # calculate the oxygen solubility
-O2sat <- gas_solubility(S = 0, t = 10, species = "O2")
+
+O2satmm <- gas_solubility(S = 0, t = 10, species = "O2")      #mmol/m3/bar
+O2sat <- O2satmm/1000                                         #mol/m3/bar
+
 ```
 
 
@@ -250,12 +253,12 @@ Construct the total C budget in the modeled spatial domain to verify that the ma
 data.ext <- read.table(file = "p4-data.dat", header = TRUE, sep = ",")
 
 klooiparms <- parms
-klooiparms["rA"]        <- 0.06
-klooiparms["rD"]        <- 0.0001
-klooiparms["DOMriver"]  <- 0.06
+klooiparms["rA"]        <- 0.4
+klooiparms["rD"]        <- 0.1
 klooiparms["rAer"]      <- 0.00001
-klooiparms["rNitri"]    <- 0.004
-klooiparms["rNitri"]    <- 0.004
+klooiparms["rNitri"]    <- 100
+klooiparms["kO2"]       <- 0.1
+
 
 std2 <- steady.1D (y=state.ini, func=Aquifer, parms=klooiparms, 
                    nspec=nspec, dimens=N, names=SVnames,
