@@ -201,7 +201,9 @@ std <- steady.1D (y=state.ini, func=Aquifer, parms=parms,
 
 Visualise the steady state solutions, including the depth profile of the process rate.
 
+
 ```{r, fig.height=8, fig.width = 12}
+
 plot(std, grid=Grid$x.mid, lty=1, lwd=2, mfrow=c(2,3), xlab = "length (m)", ylab = "concentration (mol/m3)")
 plot(std, grid=Grid$x.mid, which=c("Mineralisation", "Denitrification", "Nitrification", "Aeration"), lty=1, lwd=2, mfrow=c(2,3))
 
@@ -227,7 +229,6 @@ Construct the total C budget in the modeled spatial domain to verify that the ma
 (DOM_MBC <- c(flux_difference  =  BUDGET$DOM.SWI.Flux - BUDGET$DOM.Deep.Flux, 
               integrated_rate  = -BUDGET$TotalMin - BUDGET$TotalDen, 
               MBC              =  BUDGET$DOM.SWI.Flux - BUDGET$DOM.Deep.Flux - BUDGET$TotalMin - BUDGET$TotalDen))             # net production
-
 
 (NO3_MBC <- c(flux_difference  =  BUDGET$NO3.SWI.Flux - BUDGET$NO3.Deep.Flux,
               integrated_rate  =  BUDGET$TotalNit - (4/5) * BUDGET$TotalDen,
@@ -368,4 +369,5 @@ DOM_vect[min_ind]
 legend("topright", legend = c("minimal", "maximal", "well"), lty = 1, col = c("blue", "black","green"))
 
 ```
+
 
