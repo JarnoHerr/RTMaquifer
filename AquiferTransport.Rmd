@@ -201,7 +201,9 @@ std <- steady.1D (y=state.ini, func=Aquifer, parms=parms,
 
 Visualise the steady state solutions, including the depth profile of the process rate.
 
-```{r}
+
+```{r, fig.height=8, fig.width = 12}
+
 plot(std, grid=Grid$x.mid, lty=1, lwd=2, mfrow=c(2,3), xlab = "length (m)", ylab = "concentration (mol/m3)")
 plot(std, grid=Grid$x.mid, which=c("Mineralisation", "Denitrification", "Nitrification", "Aeration"), lty=1, lwd=2, mfrow=c(2,3))
 
@@ -228,7 +230,6 @@ Construct the total C budget in the modeled spatial domain to verify that the ma
               integrated_rate  = -BUDGET$TotalMin - BUDGET$TotalDen, 
               MBC              =  BUDGET$DOM.SWI.Flux - BUDGET$DOM.Deep.Flux - BUDGET$TotalMin - BUDGET$TotalDen))             # net production
 
-
 (NO3_MBC <- c(flux_difference  =  BUDGET$NO3.SWI.Flux - BUDGET$NO3.Deep.Flux,
               integrated_rate  =  BUDGET$TotalNit - (4/5) * BUDGET$TotalDen,
               MBC              =  BUDGET$NO3.SWI.Flux - BUDGET$NO3.Deep.Flux + BUDGET$TotalNit - (4/5) * BUDGET$TotalDen))
@@ -249,6 +250,7 @@ Construct the total C budget in the modeled spatial domain to verify that the ma
 
 ```
 ## The data 
+
 ```{r}
 data.ext <- read.table(file = "p4-data.dat", header = TRUE, sep = ",")
 data.ext$DOM <- data.ext$DOM / parms[["NC"]]           #from N to C
@@ -265,15 +267,15 @@ std2 <- steady.1D (y=state.ini, func=Aquifer, parms=klooiparms,
                    positive = TRUE) 
 
 ```
-```{r}
+
+```{r, fig.height=8, fig.width = 12}
 plot(std, std2, grid=Grid$x.mid, lty=1, lwd=2, mfrow=c(2,3), xlab = "length (m)", ylab = "Concentration (mol/m3)", which = "DOM", obs = data.ext)
-abline(h=(3/12))
+abline(h=(3/12), col = "blue2", lty = 2, lwd = 2)
 plot(std, std2, grid=Grid$x.mid, lty=1, lwd=2, mfrow=NULL, xlab = "length (m)", ylab = "Concentration (mol/m3)", which = "NH3", obs = data.ext)
-abline(h=(0.05/17))
+abline(h=(0.05/17), col = "blue2", lty = 2, lwd = 2)
 plot(std, std2, grid=Grid$x.mid, lty=1, lwd=2, mfrow=NULL, xlab = "length (m)", ylab = "Concentration (mol/m3)", which = "O2", obs = data.ext)
-abline(h=0.015)
-plot.new()
-legend("right", legend = c("Standard", "Calibration"), lty=1,lwd=2,col=1:3)
+abline(h=0.015, col = "blue2", lty = 2, lwd = 2)
+legend("topright", legend = c("Standard", "Calibration"), lty=1,lwd=2,col=1:3)
 
 ```
 ```{r}
@@ -312,7 +314,7 @@ plot(DOM_vect, O2_vect, type="b", xlab = "upstream DOM concentration, [molC/m3]"
 
 lines(x = DOM_vect, y = O2_vect1, type = "b", col = "black")
 
-abline(h=0.015)
+abline(h=0.015, col="aquamarine4",lty = 2, lwd = 2)
 
 legend("topright", legend = c("minimal", "maximal"), lty = 1, col = c("blue", "black"))
 
@@ -328,14 +330,14 @@ for (DOMup in DOM_vect)
 
 
 plot(DOM_vect, NO3_vect, type="b", xlab = "upstream DOM concentration, [molC/m3]", 
-  ylab = "NO3, [molNO3/m3]", main = "NO3 concentration in the aquifer", ylim = c(0,0.4), col = "blue")
+  ylab = "NO3, [molNO3/m3]", main = "NO3 concentration in the aquifer", ylim = c(0,0.5), col = "blue")
 
 lines(x = DOM_vect, y = NO3_vect1, type = "b", col ="black")
 
 
 lines(x = DOM_vect, y = NO3_vect3, type = "b", col = "green")
 
-abline(h=(25/62))
+abline(h=(25/62), col="cornflowerblue", lty=2, lwd = 2)
 
 legend("topright", legend = c("minimal", "maximal", "well"), lty = 1, col = c("blue", "black", "green"))
 
@@ -359,7 +361,7 @@ lines(x = DOM_vect, y = NH3_vect1, type = "b", col ="black")
 
 lines(x = DOM_vect, y = NH3_vect3, type = "b", col = "green")
 
-abline(h=(0.05/17))
+abline(h=(0.05/17), col="darkorchid2", lty = 2, lwd = 2)
 
 min_ind <- which(abs(NH3_vect3 - (0.05/17)) == min(abs(NH3_vect3 - (0.05/17))))
 DOM_vect[min_ind]
@@ -367,4 +369,5 @@ DOM_vect[min_ind]
 legend("topright", legend = c("minimal", "maximal", "well"), lty = 1, col = c("blue", "black","green"))
 
 ```
+
 
