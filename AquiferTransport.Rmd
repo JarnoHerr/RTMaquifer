@@ -1,7 +1,7 @@
 ---
 title: "spread of organic contamination from a river to a aquifer"
 subtitle: "reaction transport model of different compartements in a aquifer"
-author: "Stijn Eggenkamp 11, Niek Geelen 46, Jarno Herrmann 14 and Jesper van Huizen 34"
+author: "Stijn Eggenkamp, Niek Geelen, Jarno Herrmann and Jesper van Huizen"
 date: "23-3-2022"
 output:
   pdf_document:
@@ -13,6 +13,9 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+{r child = ’intro.Rmd’}
+
 
 # R implementation
 
@@ -44,106 +47,137 @@ NH3.ini   <- rep(0, length = N)
 O2.ini    <- rep(0, length = N)
 N2.ini    <- rep(0, length = N)
 state.ini <- c(DOM.ini, NO3.ini, NH3.ini, O2.ini, N2.ini)
-SVnames   <- c("DOM.ini", "NO3.ini", "NH3.ini", "O2.ini", "N2.ini")
+SVnames   <- c("DOM", "NO3", "NH3", "O2", "N2")
+nspec     <- length(SVnames)
 ```
 
-
-
-# Sediment diffusion coefficient for HCO3^-, defined at box interfaces!! (N+1 values)
-diff.DIC  <- diffcoeff(S=35, t=20)$HCO3 * 3600*24  # converted from m2/s to m2/d
-porInt    <- 0.4                                   # porosity at the box interfaces, which is constant throughout the aquifer            
-diffDIC   <- diff.DIC/(1-log(porInt^2))            # corrected for tortuosity
-```
-
-Visualise these settings.
-
-```{r, fig.width=8, fig.height=2.7}
-
-plot(diffDIC, y = Grid$x.int, type="l", ylim = c(Length,0), ylab = "depth (m)", 
-     main = "sediment diff. coeff (DIC)", xlab = "m2/d")
-```
-
-## Additional model parameters
-
-Define model parameters that do *not* vary in space.
-
+##Model Parameters
+The model parameters for the model
 ```{r}
 parms <- c(
- Dbio     = 5e-4/365,   # [m2/d]        bioturbation mixing coefficient
- v_adv    = 5e-6,       # [m/d]         sediment accretion (=advection) velocity 
- kMin     = 0.005,      # [/d]          POC mineralisation rate constant
- depoPOC  = 1e-3,       # [molPOC/m2/d] POC deposition rate (flux at SWI)
- bwDIC    = 2,          # [molDIC/m3]   DIC concentration at SWI
- POC2DIC  = 1           # [mol/mol]     Stoichiometry of reaction POC -> DIC
+ v        = 10*(24/100),   # [m/d]         the velocity of groundwater
+ a        = 1.5,           # [m]           the dispersivity of the aquifer 
+ por      = 0.4,           # [-]           average porosity of the aquifer
+ NC       = 16/106,        # [-]           Redfield ratio C -> N
+ rA       = 0.002*24,      # [/d]          the aerobic respiration rate constant
+ kO2      = 20/1000,       # [mol/m3]      affinity constant for O2 substrate
+ rD       = 0.002*24,      # [/d]          the denitrification rate constant
+ kNO3     = 35/1000,       # [mol/m3]      rate limitation for No3
+ rNitri   = 0.36*24,       # [/(mol/m3)/d] nitrification rate constant
+ rAer     = 0.0003*24,     # [/d]          the aeration constant
+ DOMriver = 0.5,           # [mol/m3]      the concentration of DOM in the river
+ O2river  = 210/1000,      # [mol/m3]      the concentration of the oxygen in the river
+ NO3river = 100/1000,      # [mol/m3]      the concentration of NO3 in the river
+ NH3river = 0/1000,        # [mol/m3]      the concentration of NH3 in the river
+ N2up     = 0/1000         # [mol/m3]      the concentration of N2 in the air
 )
+
+
+# calculate the oxygen solubility
+
+O2satmm <- gas_solubility(S = 0, t = 10, species = "O2")      #mmol/m3/bar
+O2sat <- O2satmm/1000*0.21                                         #mol/m3/bar
+# partial pressure. bar is gehele atmospheric pressure. *21% is only the o2 in de atmosfeer
+
+
 ```
 
-## Definition and initialisation of state variables
-
-```{r}
-POC.ini  <- rep(0, length = N)      # initial conditions 
-DIC.ini  <- rep(0, length = N)
-state    <- c(POC.ini, DIC.ini)     # note the order!
-names    <- c("POC", "DIC")
-nspec    <- length(names)
-```
 
 ## Definition of the model function
 
 Define the model function that calculates the *time-derivatives* for each state variable. This includes the implementation of the transport and reaction terms.
 
 ```{r}
-Diamodel <- function (t, state, pars)   # state is a LONG vector
+Aquifer <- function (t, state, pars)   # state is a LONG vector
 {
   with (as.list(pars),{ 
     
     # unpack state variables
-    POC <- state[ (0*N+1) : (1*N) ]    # first N elements: POC
-    DIC <- state[ (1*N+1) : (2*N) ]    # next N elements:  DIC
-
+    DOM <- state[ (0*N+1) : (1*N) ]    # first N elements: DOM
+    NO3 <- state[ (1*N+1) : (2*N) ]    # next N elements:  NO3
+    NH3 <- state[ (2*N+1) : (3*N) ]    # next N elements: NH3
+    O2  <- state[ (3*N+1) : (4*N) ]    # next N elements: O2
+    N2  <- state[ (4*N+1) : (5*N) ]    # next N elements: N2
+    
+    # calculate the diffusion coefficient
+    disp <- a*v
+    
     # === transport rates ===
     # note: zero gradient by default at lower boundaries
- 
-    # solid substances, VF = solid volume fraction = 1-porosity!    
-    tran.POC <- tran.1D(C = POC, flux.up = depoPOC,  # upper boundary: flux 
-                        dx = Grid, VF = porSolid,    # grid and volume fraction (1-por)
-                        D = Dbio, v = v_adv)         # mixing (bioturbation) and advection
+    # dissolved substances, VF = porosity    
+    tran.DOM <- tran.1D(C = DOM, C.up = DOMriver,    # upper boundary: concentration 
+                        dx = Grid, VF = por,         # grid and porosity
+                        D = disp, v = v)             # diffusion and advection
 
-    # dissolved substances, VF = liquid volume fraction = porosity!
-    tran.DIC <- tran.1D(C = DIC, C.up = bwDIC,       # upper boundary: concentration
-                        dx = Grid, VF = porLiquid,   # grid and volume fraction (por)
-                        D = diffDIC, v = v_adv)      # diffusive mixing and advection
-                                                     # (bioturbation mixing negligible)
+    
+    tran.NO3 <- tran.1D(C = NO3, C.up = NO3river,    # upper boundary: concentration
+                        dx = Grid, VF = por,         # grid and porosity
+                        D = disp, v = v)             # diffusive mixing and advection
+    
+    tran.NH3 <- tran.1D(C = NH3, C.up = NH3river,    # upper boundary: concentration
+                        dx = Grid, VF = por,         # grid and porosity
+                        D = disp, v = v)             # diffusive mixing and advection
+    
+    tran.O2  <- tran.1D(C = O2, C.up = O2river,      # upper boundary: concentration
+                        dx = Grid, VF = por,         # grid and porosity
+                        D = disp, v = v)             # diffusive mixing and advection
+    
+    tran.N2  <- tran.1D(C = N2, C.up = N2up, 
+                        dx = Grid, VF = por, 
+                        D = disp, v = v)
+    
+                                                     
  
     # === reaction rates ===
-    # POC mineralisation
-    Miner <- kMin * POC   # [molPOC/m3 SOLID/d] (per volume of solid!)
-
-    # more rate expressions can be added here ...
+    # Aerobic Mineralization
+    Mineralisation <- rA * DOM * (O2/(O2+kO2))   # [mol DOM/m3 liquid/d] 
     
+    # Denitrification
+    Denitrification <- rD * DOM * (kO2/(O2+kO2)) * (NO3/(NO3+kNO3)) # [mol DOM/m3 liquid/d]
+
+    
+    # Nitrification 
+    Nitrification  <- rNitri * NH3 * O2          # [mol/m3 liquid/d]
+
+    # Aeration
+    Aeration <- rAer*(O2sat - O2)
+
     # === mass balances : dC/dt = transport + reactions ===
     
-    # solid substances
-    dPOC.dt  <- ( tran.POC$dC                   # transport
-                - Miner )                       # reactions, [molPOC/m3 SOLID/d] !!
-    
     # dissolved substances
-    por      <- porLiquid$mid
-    dDIC.dt  <- ( tran.DIC$dC +                 # transport
-                  POC2DIC*Miner * (1-por)/por ) # reactions, [molDIC/m3 LIQUID/d] !!
+    dDOM.dt  <- tran.DOM$dC - Mineralisation - Denitrification                                     # [molDOM/m3 liquid/d]
+    dNO3.dt  <- tran.NO3$dC + Nitrification - (4/5) * Denitrification                              # [molNO3/m3 liquid/d]
+    dNH3.dt  <- tran.NH3$dC + NC*Mineralisation + NC*Denitrification - Nitrification               # [molNH3/m3 liquid/d]
+    dO2.dt   <- tran.O2$dC - Mineralisation - 2*Nitrification + Aeration                           # [molO2/m3 liquid/d]
+    dN2.dt   <- tran.N2$dC + (2/5)*Denitrification
+    
 
     # depth-integrated rates: [mol POC/m2 BULK/d] !!
-    TotalMin  <- sum(Miner*Grid$dx*porSolid$mid)
+    TotalMin  <- sum(Mineralisation*Grid$dx*por)
+    TotalDen  <- sum(Denitrification*Grid$dx*por)
+    TotalNit  <- sum(Nitrification*Grid$dx*por)
+    TotalAer  <- sum(Aeration*Grid$dx*por)
   
-    return(list(c(dPOC.dt, dDIC.dt),            # the time-derivatives, as a long vector
-          Mineralisation = Miner,               # Mineralisation rates, as a vector
-             
+    return(list(c(dDOM.dt, dNO3.dt, dNH3.dt, dO2.dt, dN2.dt),            # the time-derivatives, as a long vector
+          Mineralisation  = Mineralisation,                              # Mineralisation rates, as a vector
+          Denitrification = Denitrification,                             # Denitrification rates, as a vector
+          Nitrification   = Nitrification,                               # Nitrification rates, as a vector
+          Aeration        = Aeration,                                    # Aeration rates, as a vector
           # for creating budgets
-          TotalMin      = TotalMin,             # [molPOC/m2 BULK/d]
-          DIC.SWI.Flux  = tran.DIC$flux.up,     # [molDIC/m2 BULK/d]
-          DIC.Deep.Flux = tran.DIC$flux.down,   # [molDIC/m2 BULK/d]
-          POC.SWI.Flux  = tran.POC$flux.up,     # [molPOC/m2 BULK/d]
-          POC.Deep.Flux = tran.POC$flux.down))  # [molPOC/m2 BULK/d]
+          TotalMin      = TotalMin,             # [molDOM/m2 BULK/d]
+          TotalDen      = TotalDen,             # [molDOM/m2 BULK/d]
+          TotalNit      = TotalNit,             # [mol/m2 BULK/d]
+          TotalAer      = TotalAer,
+          DOM.SWI.Flux  = tran.DOM$flux.up,     # [mol/m2 BULK/d]
+          DOM.Deep.Flux = tran.DOM$flux.down,   # [mol/m2 BULK/d]
+          NO3.SWI.Flux  = tran.NO3$flux.up,     # [mol/m2 BULK/d]
+          NO3.Deep.Flux = tran.NO3$flux.down,   # [mol/m2 BULK/d]
+          NH3.SWI.Flux  = tran.NH3$flux.up,     # [mol/m2 BULK/d]
+          NH3.Deep.Flux = tran.NH3$flux.down,   # [mol/m2 BULK/d]
+          O2.SWI.Flux   = tran.O2$flux.up,      # [mol/m2 BULK/d]
+          O2.Deep.Flux  = tran.O2$flux.down,    # [mol/m2 BULK/d]
+          N2.SWI.Flux   = tran.N2$flux.up,      # [mol/m2 BULK/d]
+          N2.Deep.Flux  = tran.N2$flux.down))   # [mol/m2 BULK/d]
  })
 }
 ```
@@ -153,114 +187,185 @@ Diamodel <- function (t, state, pars)   # state is a LONG vector
 Find a steady-state solution with the function *steady.1D* from the package *rootSolve*.
 
 ```{r}
-p0 <- p1 <- p2 <- parms      # three runs with different POC deposition rates
 
-p0["depoPOC"]  <- 0          # molPOC/m2/day
-std0 <- steady.1D (y=state, func=Diamodel, parms=p0, 
-                   nspec=nspec, dimens=N, names=names,
+
+
+std <- steady.1D (y=state.ini, func=Aquifer, parms=parms, 
+                   nspec=nspec, dimens=N, names=SVnames,
                    positive = TRUE)     # to have only positive values! 
 
-p1["depoPOC"]  <- 1e-3       # molPOC/m2/day
-std1 <- steady.1D (y=state, func=Diamodel, parms=p1, 
-                   nspec=nspec, dimens=N, names=names,
-                   positive = TRUE)     
 
-p2["depoPOC"]  <- 2e-3       # molPOC/m2/day
-std2 <- steady.1D (y=state, func=Diamodel, parms=p2, 
-                   nspec=nspec, dimens=N, names=names,
-                   positive = TRUE) 
 ```
 
-### Plotting
+## Plotting
 
 Visualise the steady state solutions, including the depth profile of the process rate.
 
-```{r, fig.width=8, fig.height=3}
-plot(std0, std1, std2, xyswap=TRUE, grid=Grid$x.mid, lty=1, lwd=2,
-     which = c("POC",           "DIC",            "Mineralisation"  ),
-     xlab  = c("molC/m3 Solid", "molC/m3 Liquid", "molC/m3 Solid/d"), 
-     ylab  = "depth (m)", mfrow=c(1,3))
+```{r, fig.height=8, fig.width = 12}
+plot(std, grid=Grid$x.mid, lty=1, lwd=2, mfrow=c(2,3), xlab = "length (m)", ylab = "concentration (mol/m3)")
+plot(std, grid=Grid$x.mid, which=c("Mineralisation", "Denitrification", "Nitrification", "Aeration"), lty=1, lwd=2, mfrow=c(2,3))
 
-legend("bottomright", legend=c("0", "1e-3", "2e-3"), title="depoPOC (mol/m2/d)",
-       lwd=2, lty=1, col=1:3)
+
 ```
 
-### Budget
+## Budget
 
 Check the fluxes at the domain boundaries (only done for the steady-state solution *std1*).
 
 ```{r}
-toselect <- c("TotalMin", "DIC.SWI.Flux", "DIC.Deep.Flux", 
-              "POC.SWI.Flux", "POC.Deep.Flux")
-BUDGET   <- std1[toselect]
+toselect <- c("TotalMin", "TotalDen", "TotalNit", "TotalAer", "DOM.SWI.Flux", "DOM.Deep.Flux", 
+              "NO3.SWI.Flux", "NO3.Deep.Flux", "NH3.SWI.Flux", "NH3.Deep.Flux", "O2.SWI.Flux", "O2.Deep.Flux",
+              "N2.SWI.Flux", "N2.Deep.Flux")
+BUDGET   <- std[toselect]
 unlist(BUDGET)    # show result
 ```
 
 Construct the total C budget in the modeled spatial domain to verify that the mass balances are correct: for each state variable, the *difference between fluxes* at the lower and upper boundaries should be **equal** to the *net production rate* integrated along the domain.
 
 ```{r}
-# POC mass balance check
-c(flux_difference =  BUDGET$POC.Deep.Flux - BUDGET$POC.SWI.Flux, 
-  integrated_rate = -BUDGET$TotalMin) # net production
+# DOM mass balance check
+(DOM_MBC <- c(flux_difference  =  BUDGET$DOM.SWI.Flux - BUDGET$DOM.Deep.Flux, 
+              integrated_rate  = -BUDGET$TotalMin - BUDGET$TotalDen, 
+              MBC              =  BUDGET$DOM.SWI.Flux - BUDGET$DOM.Deep.Flux - BUDGET$TotalMin - BUDGET$TotalDen))             # net production
 
-# DIC mass balance check
-c(flux_difference =  BUDGET$DIC.Deep.Flux - BUDGET$DIC.SWI.Flux, 
-  integrated_rate =  BUDGET$TotalMin) # net production
+
+(NO3_MBC <- c(flux_difference  =  BUDGET$NO3.SWI.Flux - BUDGET$NO3.Deep.Flux,
+              integrated_rate  =  BUDGET$TotalNit - (4/5) * BUDGET$TotalDen,
+              MBC              =  BUDGET$NO3.SWI.Flux - BUDGET$NO3.Deep.Flux + BUDGET$TotalNit - (4/5) * BUDGET$TotalDen))
+
+(NH3_MBC <- c(flux_difference  =  BUDGET$NH3.SWI.Flux - BUDGET$NH3.Deep.Flux,
+              integrated_rate  =  (16/106) * BUDGET$TotalDen + (16/106) * BUDGET$TotalMin - BUDGET$TotalNit,
+              MBC              =  BUDGET$NH3.SWI.Flux - BUDGET$NH3.Deep.Flux + (16/106) * BUDGET$TotalDen + (16/106) * BUDGET$TotalMin - BUDGET$TotalNit))
+
+(O2_MBC  <- c(flux_difference  =  BUDGET$O2.SWI.Flux - BUDGET$O2.Deep.Flux,
+              integrated_rate  = -BUDGET$TotalMin -2*BUDGET$TotalNit + BUDGET$TotalAer,
+              MBC              =  BUDGET$O2.SWI.Flux - BUDGET$O2.Deep.Flux + -BUDGET$TotalMin -2*BUDGET$TotalNit + BUDGET$TotalAer))
+
+(N2_MBC  <- c(flux_difference  =  BUDGET$N2.SWI.Flux - BUDGET$N2.Deep.Flux, 
+              integrated_rate  = (2/5)*BUDGET$TotalDen, 
+              MBC              =  BUDGET$N2.SWI.Flux - BUDGET$N2.Deep.Flux + (2/5)*BUDGET$TotalDen))
+
+
+
 ```
-
-## Dynamic solution
-
-Find the dynamic solution using the function *ode.1D* from the package *deSolve*. The steady-state solution *std1* is used as the initial condition, the POC deposition flux is increased 10-fold. 
+## The data 
 
 ```{r}
-times          <- seq(from = 0, to = 2*365, by = 10)
-p2             <- parms
-p2["depoPOC"]  <- parms["depoPOC"]*10         # molPOC/m2/day
-out            <- ode.1D(y=std1$y, func=Diamodel, parms=p2, times = times,
-                         nspec=nspec, dimens=N, names=names )
+data.ext <- read.table(file = "p4-data.dat", header = TRUE, sep = ",")
+data.ext$DOM <- data.ext$DOM / parms[["NC"]]           #from N to C
+
+
+klooiparms <- parms
+
+klooiparms["rNitri"]     <- 0.36*24/2.3
+klooiparms["rAer"]       <- 0.0003*24/3.3   
+klooiparms["DOMriver"]   <- 0.5*0.70          
+
+std2 <- steady.1D (y=state.ini, func=Aquifer, parms=klooiparms, 
+                   nspec=nspec, dimens=N, names=SVnames,
+                   positive = TRUE) 
+
 ```
 
-### Plotting
+```{r, fig.height=8, fig.width = 12}
+plot(std, std2, grid=Grid$x.mid, lty=1, lwd=2, mfrow=c(2,3), xlab = "length (m)", ylab = "Concentration (mol/m3)", which = "DOM", obs = data.ext)
+abline(h=(3/12), col = "blue2", lty = 2, lwd = 2)
+plot(std, std2, grid=Grid$x.mid, lty=1, lwd=2, mfrow=NULL, xlab = "length (m)", ylab = "Concentration (mol/m3)", which = "NH3", obs = data.ext)
+abline(h=(0.05/17), col = "blue2", lty = 2, lwd = 2)
+plot(std, std2, grid=Grid$x.mid, lty=1, lwd=2, mfrow=NULL, xlab = "length (m)", ylab = "Concentration (mol/m3)", which = "O2", obs = data.ext)
+abline(h=0.015, col = "blue2", lty = 2, lwd = 2)
+legend("topright", legend = c("Standard", "Calibration"), lty=1,lwd=2,col=1:3)
 
-Visualise the dynamic solution as an image.
+```
+```{r}
 
-```{r, fig.width=8, fig.height=4}
-par(mar = c(4,4,4,4))
-image(out, legend = TRUE, grid = Grid$x.mid, ylim = c(Length,0), 
-      las = 1, ylab = "depth (m)", xlab="time (d)")
+
+
+#sensitivity analysis
+Sens <- function(DOMup){
+ parsDOM <- parms
+ parsDOM["DOMriver"] <- DOMup   # concentration of DOM in the river 
+ AquiferDOM <- steady.1D(y = state.ini, parms = parsDOM, func = Aquifer, positive = TRUE,
+                  nspec = length(SVnames), dimens = N, names = SVnames)
+}
+
+DOM_vect <- seq(from = 0, to = 1, by = 0.05)
+O2_vect   <- NULL
+O2_vect1  <- NULL
+NO3_vect  <- NULL
+NO3_vect1 <- NULL
+NO3_vect3 <- NULL
+NH3_vect  <- NULL
+NH3_vect1 <- NULL
+NH3_vect3 <- NULL
+
+# use for-loop to find the minimal, mean, and maximal O2 concentration for each value in DOM_vect
+for (DOMup in DOM_vect) 
+   O2_vect <- c(O2_vect, min(Sens(DOMup)$y[,"O2"]))
+
+for (DOMup in DOM_vect) 
+   O2_vect1 <- c(O2_vect1, max(Sens(DOMup)$y[,"O2"]))
+
+
+
+plot(DOM_vect, O2_vect, type="b", xlab = "upstream DOM concentration, [molC/m3]", 
+  ylab = "O2, [molO2/m3]", main = "O2 concentration in the aquifer", ylim = c(0,0.5), col = "blue")
+
+lines(x = DOM_vect, y = O2_vect1, type = "b", col = "black")
+
+abline(h=0.015, col="aquamarine4",lty = 2, lwd = 2)
+
+legend("topright", legend = c("minimal", "maximal"), lty = 1, col = c("blue", "black"))
+
+# use for-loop to find the minimal, mean, and maximal NO3 concentration for each value in DOM_vect
+for (DOMup in DOM_vect)
+   NO3_vect <- c(NO3_vect, min(Sens(DOMup)$y[,"NO3"]))
+
+for (DOMup in DOM_vect) 
+   NO3_vect1 <- c(NO3_vect1, max(Sens(DOMup)$y[,"NO3"]))
+
+for (DOMup in DOM_vect)
+   NO3_vect3 <- c(NO3_vect3, Sens(DOMup)$y[200*N/Length, "NO3"])
+
+
+plot(DOM_vect, NO3_vect, type="b", xlab = "upstream DOM concentration, [molC/m3]", 
+  ylab = "NO3, [molNO3/m3]", main = "NO3 concentration in the aquifer", ylim = c(0,0.5), col = "blue")
+
+lines(x = DOM_vect, y = NO3_vect1, type = "b", col ="black")
+
+
+lines(x = DOM_vect, y = NO3_vect3, type = "b", col = "green")
+
+abline(h=(25/62), col="cornflowerblue", lty=2, lwd = 2)
+
+legend("topright", legend = c("minimal", "maximal", "well"), lty = 1, col = c("blue", "black", "green"))
+
+# use for-loop to find the minimal, mean, and maximal NH3 concentration for each value in DOM_vect
+for (DOMup in DOM_vect)
+   NH3_vect <- c(NH3_vect, min(Sens(DOMup)$y[,"NH3"]))
+
+for (DOMup in DOM_vect) 
+   NH3_vect1 <- c(NH3_vect1, max(Sens(DOMup)$y[,"NH3"]))
+
+for (DOMup in DOM_vect)
+   NH3_vect3 <- c(NH3_vect3, Sens(DOMup)$y[200*N/Length, "NH3"])
+
+
+
+plot(DOM_vect, NH3_vect, type="b", xlab = "upstream DOM concentration, [molC/m3]", 
+  ylab = "NH3, [molNH3/m3]", main = "NH3 concentration in the aquifer", ylim = c(0, 0.03), col = "blue")
+
+lines(x = DOM_vect, y = NH3_vect1, type = "b", col ="black")
+
+
+lines(x = DOM_vect, y = NH3_vect3, type = "b", col = "green")
+
+abline(h=(0.05/17), col="darkorchid2", lty = 2, lwd = 2)
+
+min_ind <- which(abs(NH3_vect3 - (0.05/17)) == min(abs(NH3_vect3 - (0.05/17))))
+DOM_vect[min_ind]
+
+legend("topright", legend = c("minimal", "maximal", "well"), lty = 1, col = c("blue", "black","green"))
+
 ```
 
-Display results as lines showing the depth distribution for all time points.
-
-```{r, fig.width=8, fig.height=4}
-matplot.1D(out, type = "l", grid = Grid$x.mid, 
-      col = grey(seq(0.2,0.8,len=length(times))), # This will use a sequence of greys
-                                                  # grey(1) = white, grey(0) = black
-      las = 1, xyswap = TRUE, lty = 1, ylab="depth (m)",
-      xlab = c("molPOC/m3 SOLID", "molDIC/m3 LIQUID"))
-```
-
-Visualise the fluxes at the SWI and in the deep sediment as a function of time.
-
-```{r, fig.width=10, fig.height=3}
-plot(out, which = c("DIC.SWI.Flux", "DIC.Deep.Flux", 
-                    "POC.SWI.Flux", "POC.Deep.Flux"), 
-     mfrow=c(1,4), xlab="time (d)", ylab="molC/m2/d")
-```
-
-# References
-
-R Core Team (2020). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
-  
-Soetaert Karline (2009).  rootSolve: Nonlinear root finding, equilibrium and steady-state analysis of ordinary differential equations.  R-package version 1.6
-  
-Soetaert Karline, Thomas Petzoldt, R. Woodrow Setzer (2010). Solving Differential
-  Equations in R: Package deSolve. Journal of Statistical Software, 33(9), 1--25. URL
-  http://www.jstatsoft.org/v33/i09/ DOI 10.18637/jss.v033.i09
-  
-Soetaert, Karline and Meysman, Filip (2012). Reactive transport in aquatic ecosystems: Rapid model
-  prototyping in the open source software R Environmental Modelling & Software, 32, 49-60.
-
-Soetaert Karline and Thomas Petzoldt (2020). marelac: Tools for Aquatic Sciences. R package
-  version 2.1.10. https://CRAN.R-project.org/package=marelac
-  
