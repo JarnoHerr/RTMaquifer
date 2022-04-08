@@ -205,7 +205,7 @@ Visualise the steady state solutions, including the depth profile of the process
 ```{r, fig.height=8, fig.width = 12}
 
 plot(std, grid=Grid$x.mid, lty=1, lwd=2, mfrow=c(2,3), xlab = "length (m)", ylab = "concentration (mol/m3)")
-plot(std, grid=Grid$x.mid, which=c("Mineralisation", "Denitrification", "Nitrification", "Aeration"), lty=1, lwd=2, mfrow=c(2,3))
+plot(std, grid=Grid$x.mid, which=c("Mineralisation", "Denitrification", "Nitrification", "Aeration"), lty=1, lwd=2, mfrow=c(2,3), xlab = "length (m)", ylab = "(rate (mol/m3/d)")
 
 
 ```
