@@ -256,13 +256,13 @@ data.ext <- read.table(file = "p4-data.dat", header = TRUE, sep = ",")
 data.ext$DOM <- data.ext$DOM / parms[["NC"]]           #from N to C
 
 
-klooiparms <- parms
+calibration <- parms
 
-klooiparms["rNitri"]     <- 0.36*24/2.3
-klooiparms["rAer"]       <- 0.0003*24/3.3   
-klooiparms["DOMriver"]   <- 0.5*0.70          
+calibration["rNitri"]     <- 0.36*24/2.3
+calibration["rAer"]       <- 0.0003*24/3.3   
+calibration["DOMriver"]   <- 0.5*0.70          
 
-std2 <- steady.1D (y=state.ini, func=Aquifer, parms=klooiparms, 
+std2 <- steady.1D (y=state.ini, func=Aquifer, parms=calibration, 
                    nspec=nspec, dimens=N, names=SVnames,
                    positive = TRUE) 
 
