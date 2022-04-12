@@ -218,8 +218,9 @@ Check the fluxes at the domain boundaries (only done for the steady-state soluti
 toselect <- c("TotalMin", "TotalDen", "TotalNit", "TotalAer", "DOM.SWI.Flux", "DOM.Deep.Flux", 
               "NO3.SWI.Flux", "NO3.Deep.Flux", "NH3.SWI.Flux", "NH3.Deep.Flux", "O2.SWI.Flux", "O2.Deep.Flux",
               "N2.SWI.Flux", "N2.Deep.Flux")
+BUDGET1  <- data.frame(Total and Flux = unlist(std[toselect]))
 BUDGET   <- std[toselect]
-unlist(BUDGET)    # show result
+knitr::kable(BUDGET1)
 ```
 
 Construct the total C budget in the modeled spatial domain to verify that the mass balances are correct: for each state variable, the *difference between fluxes* at the lower and upper boundaries should be **equal** to the *net production rate* integrated along the domain.
