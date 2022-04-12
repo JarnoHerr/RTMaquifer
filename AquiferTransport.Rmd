@@ -218,7 +218,7 @@ Check the fluxes at the domain boundaries (only done for the steady-state soluti
 toselect <- c("TotalMin", "TotalDen", "TotalNit", "TotalAer", "DOM.SWI.Flux", "DOM.Deep.Flux", 
               "NO3.SWI.Flux", "NO3.Deep.Flux", "NH3.SWI.Flux", "NH3.Deep.Flux", "O2.SWI.Flux", "O2.Deep.Flux",
               "N2.SWI.Flux", "N2.Deep.Flux")
-BUDGET1  <- data.frame(Total&Flux = unlist(std[toselect]))
+BUDGET1  <- data.frame(TOTALandFLUX = unlist(std[toselect]))
 BUDGET   <- std[toselect]
 knitr::kable(BUDGET1)
 ```
