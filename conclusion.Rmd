@@ -1,0 +1,14 @@
+---
+title: "conclusion"
+author: "Stijn Eggenkamp, Niek Geelen, Jarno Herrmann and Jesper van Huizen"
+date: "4/8/2022"
+output: pdf_document
+---
+
+# Conclusion
+
+An aquifer between a river and a well is analyzed with a reactive transport model. For this study we modeled five state variables: DOM, ammonium ($NH_3$), nitrate ($NO_3$), oxygen ($O_2$), and nitrogen ($N_2$). This is done by assuming the advection-dispersion equation for transport and three reaction processes for the biochemical reaction processes. The three reactions considered are mineralisation, denitrification, and nitrification. 
+The results show that mineralisation and denitrification both cause degradation of DOM. In the process, ammonium is generated. The amount of denitrification gets higher when the amount of mineralisation diminishes. The oxygen concentration diminishes strongly in the first part of the aquifer, while the nitrate concentration diminishes a bit further away. Re-aeration causes the oxygen concentration to increase again, while nitrification causes a slight increase in nitrate concentration after depletion. In the regions where oxygen and nitrate are regenerated there is still some mineralisation and denitrification, but the rate is substantially lower. In nitrification, ammonium reacts with oxygen to nitrate. This process is strongly dependent on the oxygen concentration and ammonium concentration in different parts of the catchment. At 500 meters in the aquifer, the processes of nitrification, denitrification, and mineralization do not influence the degradation of substances anymore. Only aeration is at this point still present in the aquifer.
+
+In the first part of the catchment, the DOM concentration is too high for groundwater to be suitable for drinking water. Processes in the aquifer cause the DOM concentration to diminish. However, the ammonium, which is generated from the mineralisation and denitrification, causes the groundwater not to be suitable for drinking water in the middle part of the aquifer. Around the well, the groundwater is suitable for drinking purposes. From 350 meters, the groundwater is suitable for drinking purposes. The ammonium concentration has decreased due to the nitrification process.  
+A DOM concentration of 0.5 $mol C/m^3$ is not suitable for drinking purposes anymore at a distance of 200 meters from the well. The nitrate concentration is below the threshold for all variations of the DOM concentration. 

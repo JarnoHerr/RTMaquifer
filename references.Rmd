@@ -1,0 +1,46 @@
+---
+title: "references"
+author: "Stijn Eggenkamp, Niek Geelen, Jarno Herrmann and Jesper van Huizen"
+date: "4/8/2022"
+output: pdf_document
+---
+
+\newpage
+
+# Acknowledgements
+
+We would like to thank Karline Soetaert and Lubos Polerecky for helping and guiding us through this project and the course. 
+
+# Author's contributions
+
+We made the model altogether. Jesper wrote the introduction. Together we established the research questions. The method section we did together again. Stijn made the conceptual diagram and added also the budget fluxes to this conceptual diagram. Jarno established the mass balance equations and added them to the paper. Niek established the rate laws, while Jesper wrote some things about the different parts. Niek and Stijn wrote the Results section together. Niek wrote the part about the calibration and also added some general notes to the graphs. Stijn did the remaining work in the results section. Jesper en Jarno worked on the discussion. Jesper wrote the discussion about the graphs with a little help from Stijn. Jarno wrote the discussion about the sensitivity analysis. Also with a little bit of help from Stijn. Niek, Jarno and Jesper wrote the conclusion with mental support from Stijn. 
+
+# What we have learned
+We have learned to create models and generate predictions. We have practiced how to write computer code. We liked it to work with our peers and practicing communication about model results. Also, the interpreting results, which were derived from the models, were an important part of the course for us. We have learned to do the first steps in model development, among which are the drawing of a conceptual diagram and the establishment of differential equations.
+
+
+# References
+
+Alexander, M. (1965). Nitrification. Soil nitrogen, 10, 307-343.
+
+Dahm, C. N., Grimm, N. B., Marmonier, P., Valett, H. M., & Vervier, P. (1998). Nutrient dynamics at the interface between surface waters and groundwaters. Freshwater biology, 40(3), 427-451.
+
+Han, H., Hemp, J., Pace, L. A., Ouyang, H., Ganesan, K., Roh, J. H., ... & Gennis, R. B. (2011). Adaptation of aerobic respiration to low O2 environments. Proceedings of the National Academy of Sciences, 108(34), 14109-14114.
+
+Knowles, R. (1982). Denitrification. Microbiological reviews, 46(1), 43-70.
+
+
+Li, P., Karunanidhi, D., Subramani, T., & Srinivasamoorthy, K. (2021). Sources and consequences of groundwater contamination. Archives of environmental contamination and toxicology, 80(1), 1-10.
+
+Meng, F., Huang, G., Yang, X., Li, Z., Li, J., Cao, J., ... & Sun, L. (2013). Identifying the sources and fate of anthropogenically impacted dissolved organic matter (DOM) in urbanized rivers. Water research, 47(14), 5027-5039.
+
+N. Tufenkji, J.N. Ryan, M. Elimelech (2002). The Promise of Bank Filtration — A simple technology may inexpensively clean up poor-quality raw surface water. Environ. Sci. Technol. 36(21): 422A–428A.
+
+
+Soetaert and Herman (2009). A practical guide to ecological modelling - using R as a simulation platform. Springer.
+
+DeSimone, L. A., & Howes, B. L. (1996). Denitrification and nitrogen transport in a coastal aquifer receiving wastewater discharge. Environmental Science & Technology, 30(4), 1152-1162.
+
+
+McDonough, L.K., Santos, I.R., Andersen, M.S. et al. (2020) Changes in global groundwater organic carbon driven by climate change and urbanization. Nat Commun 11, 1279. 
+

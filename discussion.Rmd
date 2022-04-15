@@ -1,0 +1,146 @@
+---
+title: "Discussion"
+author: "Stijn Eggenkamp, Niek Geelen, Jarno Herrmann and Jesper van Huizen"
+date: "4/8/2022"
+output: pdf_document
+---
+
+\newpage
+# Discussion
+
+## Discussion 
+DOM, nitrate ($NO_3$) and oxygen ($O_2$) are transported from the river to the aquifer. All these solutes have an input concentration value at the aquifer boundary. From the river no ammonium ($NH_3$) and nitrogen ($N_2$) is transported. So, the concentration at the aquifer boundary of these values is equal to zero. 
+In the early stages of infiltration, microbial activity by oxygen-consuming microbes causes organic matter and organic pollutants to be consumed. This describes the fast decrease in oxygen concentration as well as the rate of mineralisation in the left part of the aquifer, close to the river. Once the consumption of oxygen by microbes becomes higher than the input of oxygen by infiltration, an oxygen-depleted zone is generated. This zone is visible around 50 meters in the aquifer. Also, the mineralisation rate is low around here, because there is not enough oxygen available for mineralisation to occur (Tufenkji et al., 2002). 
+When oxygen is depleted other electron acceptors, such as nitrate and sulfate, take over the processes of degradation. These processes further reduce the redox potential of the system. The increase in denitrification rate when the mineralisation rate decreases, denotes the presence of the takeover degradation by the electron acceptor nitrate. The nitrate concentration starts to decrease when it is being used as an electron acceptor. 
+The DOM concentration decreases during both the process of mineralisation and denitrification, which indicates the exponential decrease in its concentration (Tufenkji et al., 2002). 
+
+Further away from the groundwater-surface 	water interface, the microbial activity decreases, because there are less electron acceptors available. Along the aquifer, aeration of the groundwater occurs. Re-aeration and the decrease of microbial activity will cause a reduction in the intensity of the reduced oxygen zone, which can be related to the increase in oxygen concentration around 200 meters in the aquifer. The aeration rate increases when the oxygen concentration gets lower and lower. The aeration rate reaches its peak in the oxygen-depleted zone. The difference between oxygen concentration in the aquifer and the oxygen solubility is highest in the oxygen-depleted zone. The larger the difference between oxygen concentration in the aquifer and oxygen solubility, the higher the aeration rate. (Tufenkji et al., 2002). When the re-aeration occurs, it is possible for mineralisation to re-occur. However, the mineralisation rate stays low in this zone, because the DOM is already depleted at this stage. The nitrate concentration is slightly increasing again after depletion because it is re-generated in the process of nitrification. The increase is only small because it can be reused again in denitrification. The increase gets slightly higher along the aquifer because there is no DOM available anymore further in the aquifer. 
+
+Ammonium increases due to mineralisation and denitrification. When these processes stop occurring, there is no ammonium generated anymore. The ammonium gets depleted in the process of nitrification. The first peak of the nitrification rate could be attributed to the presence of ammonium and oxygen in the aquifer. The ammonium concentration stays high at this point because it is still generated through both mineralisation and denitrification. The nitrification rate decreases when the oxygen becomes depleted. In the zone of re-aeration, the nitrification rate has a second peak. In this zone also the ammonium concentration is starting to decrease because it is not generated anymore by the processes of mineralisation and denitrification.  
+The fast increase in nitrogen near the boundary could be attributed to the process of denitrification. The nitrogen increase diminishes further away from the aquifer when the process of denitrification also diminishes.
+
+## Sensitivity
+Figure 9 shows the sensitivity analysis of the DOM concentration on the oxygen concentration. The x-axis shows the value of the upstream DOM concentration. The y-axis shows the response of the O2 concentration. The blue dotted line presents the lowest value in the aquifer and the black dotted line presents the highest value in the aquifer for the given upstream DOM concentration. The range of uncertainty is smaller at low DOM concentration than at higher DOM concentration. The $O_2$ concentration also becomes smaller with increasing upstream DOM concentration. This is caused by the mineralisation process as DOM reacts with $O_2$. This causes the $O_2$ concentration to become lower with increasing input of DOM. 
+The larger range, together with the smaller $O_2$ concentration causes the minimum boundary of the $O_2$ concentration to be in the anoxic zone which makes the aquifer susceptible to the establishment of an anoxic zone, which is below the straight black line in figure 9. Although the chance is small, an anoxic zone in the aquifer has an impact on the processes in the aquifer. A limited amount of oxygen would cause the denitrification rate to go up as denitrification is inhibited by $O_2$. This is also found by DeSimone et al. (1996) who found the rate to be around 20% lower in suboxic core in comparison to the anoxic core of an aquifer in Cape Cod, Massachusetts. 
+
+\
+
+```{r}
+#sensitivity analysis
+Sens <- function(DOMup){
+ parsDOM <- parms
+ parsDOM["DOMriver"] <- DOMup   # concentration of DOM in the river 
+ AquiferDOM <- steady.1D(y = state.ini, parms = parsDOM, func = Aquifer, positive = TRUE,
+                  nspec = length(SVnames), dimens = N, names = SVnames)
+}
+
+DOM_vect <- seq(from = 0, to = 1, by = 0.05)
+O2_vect   <- NULL
+O2_vect1  <- NULL
+
+# use for-loop to find the minimal, mean, and maximal O2 concentration for each value in DOM_vect
+for (DOMup in DOM_vect) 
+   O2_vect <- c(O2_vect, min(Sens(DOMup)$y[,"O2"]))
+
+for (DOMup in DOM_vect) 
+   O2_vect1 <- c(O2_vect1, max(Sens(DOMup)$y[,"O2"]))
+
+```
+
+```{r, fig.height=6, fig.width = 10, fig.cap="The dependency of $O_2$ ($mol O_2/m^3$) concentration in the aquifer of upstream DOM ($mol C/m^3$) concentration.", echo=FALSE}
+
+plot(DOM_vect, O2_vect, type="b", xlab = "Upstream DOM concentration, [molC/m3]", 
+  ylab = "O2, [molO2/m3]", main = "O2 concentration in the aquifer", ylim = c(0,0.5), col = "blue")
+
+lines(x = DOM_vect, y = O2_vect1, type = "b", col = "black")
+
+abline(h=0.015, col="darkorchid2",lty = 2, lwd = 2)
+
+legend("topleft", legend = c("Minimal", "Maximal", "Anoxic Zone"), lty = 1, col = c("blue", "black", "darkorchid2"))
+```
+
+\newpage
+
+Figure 10 shows the sensitivity of $NO_3$ to the upstream DOM concentration. We compare the range of possible nitrate concentrations to the threshold for safe drinking water. This is a 25 mg $NO_3$/l which is 0.4 mol $NO_3/ m^3$, see the straight black line in figure 10. The found range of $NO_3$ concentrations is situated below the threshold value and therefore the water in the aquifer is safe for all different upstream DOM input concentrations. The maximum $NO_3$ stays constant over all the DOM concentrations as $NO_3$ is only used up by denitrification. With increasing DOM this becomes less and less unlikely. This is also why the $NO_3$ concentration in the well, situated 200 m from the river, is for the most situated at the minimum boundary. At zero upstream DOM concentration, the $NO_3$ is at the maximum boundary as only a small amount of DOM is inputted. 
+
+
+```{r}
+# use for-loop to find the minimal, mean, and maximal NO3 concentration for each value in DOM_vect
+
+NO3_vect  <- NULL
+NO3_vect1 <- NULL
+NO3_vect3 <- NULL
+
+for (DOMup in DOM_vect)
+   NO3_vect <- c(NO3_vect, min(Sens(DOMup)$y[,"NO3"]))
+
+for (DOMup in DOM_vect) 
+   NO3_vect1 <- c(NO3_vect1, max(Sens(DOMup)$y[,"NO3"]))
+
+for (DOMup in DOM_vect)
+   NO3_vect3 <- c(NO3_vect3, Sens(DOMup)$y[200*N/Length, "NO3"])
+
+```
+
+```{r, fig.height=6, fig.width = 10, fig.cap="The dependency of $NO_3$ ($mol NO_3/m^3$) concentration in the aquifer of upstream DOM ($mol C/m^3$) concentration.", echo=FALSE}
+plot(DOM_vect, NO3_vect, type="b", xlab = "Upstream DOM concentration, [molC/m3]", 
+  ylab = "NO3, [molNO3/m3]", main = "NO3 concentration in the aquifer", ylim = c(0,0.5), col = "blue")
+
+lines(x = DOM_vect, y = NO3_vect1, type = "b", col ="black")
+
+
+lines(x = DOM_vect, y = NO3_vect3, type = "b", col = "green")
+
+abline(h=(25/62), col="darkorchid2", lty=2, lwd = 2)
+
+legend("right", legend = c("Minimal", "Maximal", "Well (200m)", "Threshold"), lty = 1, col = c("blue", "black", "green", "darkorchid2"))
+```
+
+
+\newpage
+
+Figure 11 shows the sensitivity analysis of $NH_3$ to the upstream DOM  concentration. The maximum threshold value of $NH_3$ concentration that the drinking water can have to still be considered safe is 0.05 $mg NH_3/l$. This is 0.0029 $mol NH_3/m^3$ which is plotted by the straight black line in figure 11. The minimal and maximal boundaries are below the threshold value at small upstream DOM concentrations. The threshold value of 0.0029 $mol NH_3/m^3$ is exceeded when the upstream DOM concentration in the well, green dotted line (at 200 meters from the aquifer), becomes higher than 0.5 $molC/m^3$, which can be seen in figure 11. The upstream DOM concentration already exceeds the threshold value at the upper boundary concentration value of 0.3 $molC/m^3$. That the $NH_3$ concentration is increased by an increase in DOM is because DOM is converted to NH3 through the processes of nitrification and denitrification. 
+
+
+
+```{r}
+# use for-loop to find the minimal, mean, and maximal NH3 concentration for each value in DOM_vect
+
+NH3_vect  <- NULL
+NH3_vect1 <- NULL
+NH3_vect3 <- NULL
+
+for (DOMup in DOM_vect)
+   NH3_vect <- c(NH3_vect, min(Sens(DOMup)$y[,"NH3"]))
+
+for (DOMup in DOM_vect) 
+   NH3_vect1 <- c(NH3_vect1, max(Sens(DOMup)$y[,"NH3"]))
+
+for (DOMup in DOM_vect)
+   NH3_vect3 <- c(NH3_vect3, Sens(DOMup)$y[200*N/Length, "NH3"])
+```
+
+
+```{r,fig.height=6, fig.width = 10, fig.cap="The dependency of $NH_3$ ($mol NH_3/m^3$) concentration in the aquifer of upstream DOM ($mol C/m^3$) concentration.", echo=FALSE}
+plot(DOM_vect, NH3_vect, type="b", xlab = "Upstream DOM concentration, [molC/m3]", 
+  ylab = "NH3, [molNH3/m3]", main = "NH3 concentration in the aquifer", ylim = c(0, 0.03), col = "blue")
+
+lines(x = DOM_vect, y = NH3_vect1, type = "b", col ="black")
+
+
+lines(x = DOM_vect, y = NH3_vect3, type = "b", col = "green")
+
+abline(h=(0.05/17), col="darkorchid2", lty = 2, lwd = 2)
+
+legend("topleft", legend = c("Minimal", "Maximal", "Well (200m)", "Threshold"), lty = 1, col = c("blue", "black","green", "darkorchid2"))
+
+```
+
+\newpage
+## Uncertainty
+The parameters used in the model result in uncertainties. A few parameters are calibrated to obtain a better result of the model. However, these parameters are only calibrated on three state variables. Therefore, there is still uncertainty in the model.  
+Besides, additional important components, such as NO2 and N2O, and processes, such as ANAMMOX, anaerobic ammonium oxidation, dissimilatory nitrate reduction to ammonia, DNRA, and N2 fixation, are not taken into account. These processes are a part of the nitrogen cycle, and the occurrence of these processes will also affect the concentration profiles of the considered state variables. 
+
+## Model improvement
+The addition of other electron acceptors to the model should be a good improvement. When oxygen is depleted other electron acceptors, such as nitrate and sulfate, take over the processes of degradation. These processes further reduce the redox potential of the system. Also ferric- and manganese oxyhydroxides act as electron acceptors at one stage of the organic matter degradation. In these processes, manganese and iron ions get mobilized, which will lead to a significant reduction of the groundwater quality. Although the electron acceptors act as an effective filter for organic contaminants, a development of a reduced zone will have a negative effect on the groundwater quality (Tufenkji et al., 2002). 
+The re-occurrence of oxygen in the re-aerated zone	 causes the iron and manganese ions to be precipitated (Tufenkji et al., 2002). 
