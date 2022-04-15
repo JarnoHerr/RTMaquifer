@@ -1,0 +1,36 @@
+---
+title: 'Spread of Organic Contamination from a River to an Aquifer'
+subtitle: "Reaction Transport Model"
+author: 
+  - Stijn Eggenkamp 6593623 
+  - Niek Geelen 6538169 
+  - Jarno Hermann 6459730
+  - Jesper van Huizen 6537480
+date: "April 2022"
+output: 
+  pdf_document:
+    toc: yes
+    number_sections: true
+  includes:
+    in_header: my_header.tex
+
+
+---
+
+```{r child = 'introduction.Rmd'}
+```
+
+```{r child = 'methods.Rmd'}
+```
+
+```{r child = 'results.Rmd'}
+```
+
+```{r child = 'discussion.Rmd'}
+```
+
+```{r child = 'conclusion.Rmd'}
+```
+
+```{r child = 'references.Rmd'}
+```
